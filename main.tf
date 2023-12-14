@@ -35,38 +35,28 @@ resource "azurerm_network_interface" "web_nic" {
     name                          = "web-ipconfig"
     subnet_id                     = azurerm_subnet.web_subnet.id
     private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = azurerm_public_ip.web_public_ip.id
   }
-}
-
-# Public IP for Web Server
-resource "azurerm_public_ip" "web_public_ip" {
-  name                = "web-public-ip"
-  resource_group_name = azurerm_resource_group.web_rg.name
-  location            = azurerm_resource_group.web_rg.location
-  allocation_method   = "Dynamic"
 }
 
 # Web Server
-resource "azurerm_windows_virtual_machine" "web_server" {
+resource "azurerm_virtual_machine" "web_server" {
   name                  = "web-server"
   resource_group_name   = azurerm_resource_group.web_rg.name
   location              = azurerm_resource_group.web_rg.location
-  size                  = "Standard_B1s" # A cost-effective VM size for learning
-  admin_username        = "adminuser"
-  admin_password        = "Password1234!" # In the real world, this needs to be replaced with a strong password
+  vm_size               = "Standard_B1s" # A cost-effective VM size for learning
   network_interface_ids = [azurerm_network_interface.web_nic.id]
 
-  os_disk {
-    caching              = "ReadWrite"
-    storage_account_type = "Standard_LRS"
+  os_profile {
+    computer_name  = "web-server"
+    admin_username = "adminuser"
+    admin_password = "Password1234!" # In the real world, this needs to be replaced with a strong password
   }
 
-  source_image_reference {
-    publisher = "MicrosoftWindowsServer"
-    offer     = "WindowsServer"
-    sku       = "2019-Datacenter"
-    version   = "latest"
+  storage_os_disk {
+    name              = "osdisk"
+    caching           = "ReadWrite"
+    create_option     = "FromImage"
+    managed_disk_type = "Standard_LRS"
   }
 }
 
@@ -80,38 +70,28 @@ resource "azurerm_network_interface" "app_nic" {
     name                          = "app-ipconfig"
     subnet_id                     = azurerm_subnet.web_subnet.id
     private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = azurerm_public_ip.app_public_ip.id
   }
-}
-
-# Public IP for App Server
-resource "azurerm_public_ip" "app_public_ip" {
-  name                = "app-public-ip"
-  resource_group_name = azurerm_resource_group.web_rg.name
-  location            = azurerm_resource_group.web_rg.location
-  allocation_method   = "Dynamic"
 }
 
 # App Server
-resource "azurerm_windows_virtual_machine" "app_server" {
+resource "azurerm_virtual_machine" "app_server" {
   name                  = "app-server"
   resource_group_name   = azurerm_resource_group.web_rg.name
   location              = azurerm_resource_group.web_rg.location
-  size                  = "Standard_B1s"
-  admin_username        = "adminuser"
-  admin_password        = "Password1234!" # Replace with a strong password
+  vm_size               = "Standard_B1s"
   network_interface_ids = [azurerm_network_interface.app_nic.id]
 
-  os_disk {
-    caching              = "ReadWrite"
-    storage_account_type = "Standard_LRS"
+  os_profile {
+    computer_name  = "app-server"
+    admin_username = "adminuser"
+    admin_password = "Password1234!" # Replace with a strong password
   }
 
-  source_image_reference {
-    publisher = "MicrosoftWindowsServer"
-    offer     = "WindowsServer"
-    sku       = "2019-Datacenter"
-    version   = "latest"
+  storage_os_disk {
+    name              = "osdisk"
+    caching           = "ReadWrite"
+    create_option     = "FromImage"
+    managed_disk_type = "Standard_LRS"
   }
 }
 
@@ -125,38 +105,28 @@ resource "azurerm_network_interface" "db_nic" {
     name                          = "db-ipconfig"
     subnet_id                     = azurerm_subnet.web_subnet.id
     private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = azurerm_public_ip.db_public_ip.id
   }
-}
-
-# Public IP for Database Server
-resource "azurerm_public_ip" "db_public_ip" {
-  name                = "db-public-ip"
-  resource_group_name = azurerm_resource_group.web_rg.name
-  location            = azurerm_resource_group.web_rg.location
-  allocation_method   = "Dynamic"
 }
 
 # Database Server
-resource "azurerm_windows_virtual_machine" "db_server" {
+resource "azurerm_virtual_machine" "db_server" {
   name                  = "db-server"
   resource_group_name   = azurerm_resource_group.web_rg.name
   location              = azurerm_resource_group.web_rg.location
-  size                  = "Standard_B1s"
-  admin_username        = "adminuser"
-  admin_password        = "Password1234!" # Replace with a strong password
+  vm_size               = "Standard_B1s"
   network_interface_ids = [azurerm_network_interface.db_nic.id]
 
-  os_disk {
-    caching              = "ReadWrite"
-    storage_account_type = "Standard_LRS"
+  os_profile {
+    computer_name  = "db-server"
+    admin_username = "adminuser"
+    admin_password = "Password1234!" # Replace with a strong password
   }
 
-  source_image_reference {
-    publisher = "MicrosoftWindowsServer"
-    offer     = "WindowsServer"
-    sku       = "2019-Datacenter"
-    version   = "latest"
+  storage_os_disk {
+    name              = "osdisk"
+    caching           = "ReadWrite"
+    create_option     = "FromImage"
+    managed_disk_type = "Standard_LRS"
   }
 }
 
