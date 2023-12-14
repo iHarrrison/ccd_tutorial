@@ -39,24 +39,26 @@ resource "azurerm_network_interface" "web_nic" {
 }
 
 # Web Server
-resource "azurerm_virtual_machine" "web_server" {
+resource "azurerm_windows_virtual_machine" "web_server" {
   name                  = "web-server"
   resource_group_name   = azurerm_resource_group.web_rg.name
   location              = azurerm_resource_group.web_rg.location
-  vm_size               = "Standard_B1s" # A cost-effective VM size for learning
+  size                  = "Standard_B1s"
+  admin_username        = "adminuser"
+  admin_password        = "ThisIsAPassword123!"
   network_interface_ids = [azurerm_network_interface.web_nic.id]
 
-  os_profile {
-    computer_name  = "web-server"
-    admin_username = "adminuser"
-    admin_password = "Password1234!" # In the real world, this needs to be replaced with a strong password
+
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "Standard_LRS"
   }
 
-  storage_os_disk {
-    name              = "osdisk"
-    caching           = "ReadWrite"
-    create_option     = "FromImage"
-    managed_disk_type = "Standard_LRS"
+  source_image_reference {
+    publisher = "MicrosoftWindowsServer"
+    offer     = "WindowsServer"
+    sku       = "2019-Datacenter"
+    version   = "latest"
   }
 }
 
@@ -74,24 +76,26 @@ resource "azurerm_network_interface" "app_nic" {
 }
 
 # App Server
-resource "azurerm_virtual_machine" "app_server" {
+resource "azurerm_windows_virtual_machine" "app_server" {
   name                  = "app-server"
   resource_group_name   = azurerm_resource_group.web_rg.name
   location              = azurerm_resource_group.web_rg.location
-  vm_size               = "Standard_B1s"
+  size                  = "Standard_B1s"
+  admin_username        = "adminuser"
+  admin_password        = "ThisIsAPassword123!"
   network_interface_ids = [azurerm_network_interface.app_nic.id]
 
-  os_profile {
-    computer_name  = "app-server"
-    admin_username = "adminuser"
-    admin_password = "Password1234!" # Replace with a strong password
+
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "Standard_LRS"
   }
 
-  storage_os_disk {
-    name              = "osdisk"
-    caching           = "ReadWrite"
-    create_option     = "FromImage"
-    managed_disk_type = "Standard_LRS"
+  source_image_reference {
+    publisher = "MicrosoftWindowsServer"
+    offer     = "WindowsServer"
+    sku       = "2019-Datacenter"
+    version   = "latest"
   }
 }
 
@@ -108,25 +112,27 @@ resource "azurerm_network_interface" "db_nic" {
   }
 }
 
-# Database Server
-resource "azurerm_virtual_machine" "db_server" {
+# DB Server
+resource "azurerm_windows_virtual_machine" "db_server" {
   name                  = "db-server"
   resource_group_name   = azurerm_resource_group.web_rg.name
   location              = azurerm_resource_group.web_rg.location
-  vm_size               = "Standard_B1s"
+  size                  = "Standard_B1s"
+  admin_username        = "adminuser"
+  admin_password        = "ThisIsAPassword123!"
   network_interface_ids = [azurerm_network_interface.db_nic.id]
 
-  os_profile {
-    computer_name  = "db-server"
-    admin_username = "adminuser"
-    admin_password = "Password1234!" # Replace with a strong password
+
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "Standard_LRS"
   }
 
-  storage_os_disk {
-    name              = "osdisk"
-    caching           = "ReadWrite"
-    create_option     = "FromImage"
-    managed_disk_type = "Standard_LRS"
+  source_image_reference {
+    publisher = "MicrosoftWindowsServer"
+    offer     = "WindowsServer"
+    sku       = "2019-Datacenter"
+    version   = "latest"
   }
 }
 
