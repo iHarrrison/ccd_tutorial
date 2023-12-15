@@ -35,11 +35,20 @@ resource "azurerm_network_interface" "web_nic" {
     name                          = "web-ipconfig"
     subnet_id                     = azurerm_subnet.web_subnet.id
     private_ip_address_allocation = "Dynamic"
+    public_ip_address_id          = azurerm_public_ip.web_public_ip.id
   }
 }
 
-# Web Server
-resource "azurerm_windows_virtual_machine" "web_server" {
+# Public IP for Web Server
+resource "azurerm_public_ip" "web_public_ip" {
+  name                = "web-public-ip"
+  resource_group_name = azurerm_resource_group.web_rg.name
+  location            = azurerm_resource_group.web_rg.location
+  allocation_method   = "Dynamic"
+}
+
+# Web Server (Linux Based for Web Serving)
+resource "azurerm_linux_virtual_machine" "web_server" {
   name                  = "web-server"
   resource_group_name   = azurerm_resource_group.web_rg.name
   location              = azurerm_resource_group.web_rg.location
@@ -48,6 +57,10 @@ resource "azurerm_windows_virtual_machine" "web_server" {
   admin_password        = "ThisIsAPassword123!"
   network_interface_ids = [azurerm_network_interface.web_nic.id]
 
+  admin_ssh_key {
+    username   = "adminuser"
+    public_key = file("./sshtest.pub")
+  }
 
   os_disk {
     caching              = "ReadWrite"
@@ -55,11 +68,34 @@ resource "azurerm_windows_virtual_machine" "web_server" {
   }
 
   source_image_reference {
-    publisher = "MicrosoftWindowsServer"
-    offer     = "WindowsServer"
-    sku       = "2019-Datacenter"
+    publisher = "Canonical"
+    offer     = "0001-com-ubuntu-server-jammy"
+    sku       = "22_04-lts"
     version   = "latest"
   }
+
+}
+
+# adds custom script so the web server runs the bash script created
+
+resource "azurerm_virtual_machine_extension" "custom_script" {
+  name                 = "installscript"
+  virtual_machine_id   = azurerm_linux_virtual_machine.web_server.id
+  publisher            = "Microsoft.Azure.Extensions"
+  type                 = "CustomScript"
+  type_handler_version = "2.0"
+
+  settings = <<SETTINGS
+    {
+        "commandToExecute": "wget -O /tmp/installing.sh 'https://tutorialccd.blob.core.windows.net/scripts/installing.sh' && bash /tmp/installing.sh"
+    }
+SETTINGS
+
+  protected_settings = <<PROTECTED_SETTINGS
+    {
+        "fileUris": ["https://tutorialccd.blob.core.windows.net/scripts/installing.sh"]
+    }
+PROTECTED_SETTINGS
 }
 
 # Network Interface for App Server
@@ -112,28 +148,35 @@ resource "azurerm_network_interface" "db_nic" {
   }
 }
 
-# DB Server
-resource "azurerm_windows_virtual_machine" "db_server" {
-  name                  = "db-server"
-  resource_group_name   = azurerm_resource_group.web_rg.name
-  location              = azurerm_resource_group.web_rg.location
-  size                  = "Standard_B1s"
-  admin_username        = "adminuser"
-  admin_password        = "ThisIsAPassword123!"
-  network_interface_ids = [azurerm_network_interface.db_nic.id]
+#DB Tier
 
+# MySQL Server
+resource "azurerm_mysql_server" "mysql_server" {
+  name                         = "db-mysqlserver"
+  resource_group_name          = azurerm_resource_group.web_rg.name
+  location                     = azurerm_resource_group.web_rg.location
+  administrator_login          = "mysqladmin"
+  administrator_login_password = "ThisIsAPassword123!"
 
-  os_disk {
-    caching              = "ReadWrite"
-    storage_account_type = "Standard_LRS"
-  }
+  sku_name   = "B_Gen5_1"
+  storage_mb = 5120
+  version    = "5.7"
 
-  source_image_reference {
-    publisher = "MicrosoftWindowsServer"
-    offer     = "WindowsServer"
-    sku       = "2019-Datacenter"
-    version   = "latest"
-  }
+  auto_grow_enabled                 = true
+  backup_retention_days             = 7
+  geo_redundant_backup_enabled      = false
+  infrastructure_encryption_enabled = false
+  public_network_access_enabled     = true
+  ssl_enforcement_enabled           = true
+}
+
+# MySQL Database
+resource "azurerm_mysql_database" "mysql_db" {
+  name                = "db-mysql"
+  resource_group_name = azurerm_resource_group.web_rg.name
+  server_name         = azurerm_mysql_server.mysql_server.name
+  charset             = "utf8"
+  collation           = "utf8_unicode_ci"
 }
 
 # Web Tier NSG
